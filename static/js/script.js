@@ -1,5 +1,23 @@
 let separated = false;
 let boxCount = 0;
+let selectedLanguage = "en"; // varsayılan dil
+
+function setLanguage(lang) {
+  selectedLanguage = lang;
+
+  // Önce tüm dil butonlarından 'selected' stilini kaldır
+  const buttons = document.querySelectorAll(".lang-btn");
+  buttons.forEach(btn => btn.classList.remove("border", "border-white"));
+
+  // Seçilen dilin butonuna beyaz kenarlık ekle
+  if (lang === "en") {
+    document.getElementById("btn-en").classList.add("border", "border-white");
+  } else if (lang === "tr") {
+    document.getElementById("btn-tr").classList.add("border", "border-white");
+  }
+
+  console.log("Seçilen dil:", selectedLanguage);
+}
 
 // Devam Et butonuna tıklanınca hem özet alınır hem kutu oluşturulur
 async function handleContinueClick() {
@@ -19,7 +37,7 @@ async function handleContinueClick() {
 
     boxesContainer.classList.remove("hidden");
     boxesContainer.classList.add("fade-in-up");
-    continueButton.innerText = "Yeni Özet Ekle";
+    continueButton.innerText = "new summary";
   }
 
   // Özetleme isteği
@@ -29,7 +47,7 @@ async function handleContinueClick() {
       headers: {
         "Content-Type": "application/json"
       },
-      body: JSON.stringify({ text: input })
+      body: JSON.stringify({ text: input, language: selectedLanguage })
     });
 
     const data = await response.json();

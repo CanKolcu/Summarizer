@@ -21,25 +21,26 @@ client.api_key = os.getenv("OPENAI_API_KEY")
 def index():
     return render_template('index.html')
 
-@app.route('/english')
-def new_page():
-    return render_template('newpage.html')
-
-
 @app.route('/summarize', methods=['POST'])
 def summarize():
     data = request.get_json()
     input_text = data.get('text')
+    language = data.get('language', 'en')  # varsayılan İngilizce
 
     if not input_text:
         return jsonify({'error': 'No text provided'}), 400
 
     try:
+        if language == 'tr':
+            prompt = f"Lütfen bu metni türkçe özetle:\n{input_text}"
+        else:
+            prompt = f"Please summarize this text in english:\n{input_text}"
+
         response = client.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[
                 {"role": "system", "content": "You are a helpful assistant that only summarizes text."},
-                {"role": "user", "content": f"Please summarize this text:\n{input_text}"}
+                {"role": "user", "content": prompt}
             ],
             max_tokens=500,
             temperature=0.7
