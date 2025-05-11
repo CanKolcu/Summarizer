@@ -1,6 +1,6 @@
 from flask import Flask, render_template
 from flask import Flask, render_template, request, jsonify
-import openai
+from openai import OpenAI
 from flask_cors import CORS
 #API_KEY.env için gerekli
 from dotenv import load_dotenv
@@ -12,8 +12,10 @@ CORS(app)
 
 load_dotenv()  # .env dosyasını yükler
 
+client = OpenAI()
+
 # OpenAI API anahtarını buraya yaz
-openai.api_key = os.getenv("OPENAI_API_KEY")
+client.api_key = os.getenv("OPENAI_API_KEY")
 
 @app.route('/')
 def index():
@@ -33,16 +35,16 @@ def summarize():
         return jsonify({'error': 'No text provided'}), 400
 
     try:
-        response = openai.ChatCompletion.create(
+        response = client.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[
-                {"role": "system", "content": "You are a helpful assistant that summarizes text."},
+                {"role": "system", "content": "You are a helpful assistant that only summarizes text."},
                 {"role": "user", "content": f"Please summarize this text:\n{input_text}"}
             ],
-            max_tokens=150,
-            temperature=0.5
+            max_tokens=500,
+            temperature=0.7
         )
-        summary = response['choices'][0]['message']['content']
+        summary = response.choices[0].message.content
         return jsonify({'summary': summary})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
