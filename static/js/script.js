@@ -5,11 +5,9 @@ let selectedLanguage = "en"; // varsayılan dil
 function setLanguage(lang) {
   selectedLanguage = lang;
 
-  // Önce tüm dil butonlarından 'selected' stilini kaldır
   const buttons = document.querySelectorAll(".lang-btn");
   buttons.forEach(btn => btn.classList.remove("border", "border-white"));
 
-  // Seçilen dilin butonuna beyaz kenarlık ekle
   if (lang === "en") {
     document.getElementById("btn-en").classList.add("border", "border-white");
   } else if (lang === "tr") {
@@ -19,7 +17,6 @@ function setLanguage(lang) {
   console.log("Seçilen dil:", selectedLanguage);
 }
 
-// Devam Et butonuna tıklanınca hem özet alınır hem kutu oluşturulur
 async function handleContinueClick() {
   const input = document.getElementById("inputText").value;
 
@@ -28,32 +25,23 @@ async function handleContinueClick() {
     return;
   }
 
-  // İlk tıklamada kutu alanlarını aktif et
   if (!separated) {
     separated = true;
-
-    const boxesContainer = document.getElementById("boxesContainer");
-    const continueButton = document.getElementById("continueButton");
-
-    boxesContainer.classList.remove("hidden");
-    boxesContainer.classList.add("fade-in-up");
-    continueButton.innerText = "new summary";
+    document.getElementById("boxesContainer").classList.remove("hidden");
+    document.getElementById("continueButton").innerText = "New Summary";
   }
 
-  // Özetleme isteği
   try {
     const response = await fetch("/summarize", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ text: input, language: selectedLanguage })
     });
 
     const data = await response.json();
 
     if (data.summary) {
-      addBox(data.summary); // kutuyu özetle oluştur
+      addBox(data.summary);
     } else {
       alert("Özetleme başarısız: " + data.error);
     }
@@ -63,20 +51,21 @@ async function handleContinueClick() {
   }
 }
 
-// Kutucuk oluşturma ve özet yerleştirme
 function addBox(summaryText) {
   boxCount++;
   const container = document.getElementById("boxesContainer");
 
   const box = document.createElement("div");
   box.className =
-    "bg-gray-800 rounded-2xl p-4 w-[200px] h-[150px] flex flex-col justify-between fade-in-up shadow-lg transform transition duration-500 cursor-pointer hover:scale-105";
+    "relative bg-gray-800 rounded-2xl p-4 w-[220px] h-[160px] flex flex-col justify-between fade-in-up shadow-lg transform transition duration-500 cursor-pointer hover:scale-105";
 
-  box.setAttribute("onclick", `expandBox(${boxCount})`);
-  box.setAttribute("data-summary", summaryText); // detaylı görünüm için
+  box.setAttribute("data-summary", summaryText);
 
   box.innerHTML = `
-    <div class="bg-gray-900 text-white w-full h-full p-2 rounded-xl overflow-auto text-sm">
+    <button onclick="removeBox(this)" class="absolute top-[-6px] right-[-6px] bg-gray-900 text-gray-300 hover:text-red-500 rounded-full w-6 h-6 flex items-center justify-center z-10 shadow-sm">
+      &times;
+    </button>
+    <div onclick="expandBox(${boxCount})" class="bg-gray-900 text-white w-full h-full p-2 rounded-xl overflow-auto text-sm">
       <strong>Özet #${boxCount}</strong><br><br>
       ${summaryText.length > 100 ? summaryText.slice(0, 100) + "..." : summaryText}
     </div>
@@ -85,27 +74,35 @@ function addBox(summaryText) {
   container.appendChild(box);
 }
 
-// Genişletilmiş görünüm
+function removeBox(button) {
+  button.parentElement.remove();
+}
+
 function expandBox(id) {
   const overlay = document.getElementById("overlay");
-  const expandedContent = document.getElementById("expandedContent");
+  const summaryText = document.querySelectorAll("#boxesContainer > div")[id - 1].getAttribute("data-summary");
 
-  // Kutuyu bul ve datadan metni çek
-  const box = document.querySelectorAll("#boxesContainer > div")[id - 1];
-  const summaryText = box.getAttribute("data-summary");
-
-  expandedContent.innerHTML = `
-    <h2 class="text-2xl mb-4 font-semibold">Özet #${id}</h2>
-    <p class="text-sm">${summaryText}</p>
-  `;
+  document.getElementById("expandedContentText").innerText = summaryText;
 
   overlay.classList.remove("hidden");
   overlay.classList.add("flex");
 }
 
-// Kapat
 function closeExpandedBox() {
   const overlay = document.getElementById("overlay");
   overlay.classList.add("hidden");
   overlay.classList.remove("flex");
+}
+
+function downloadSummary() {
+  const summaryText = document.getElementById("expandedContentText").innerText;
+  const blob = new Blob([summaryText], { type: "text/plain" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "ozet.txt";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
 }
